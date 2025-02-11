@@ -1,2 +1,6 @@
 /google-credentials.json
 /voice_output.wav
+/voice_input.wav
+/voice_output.webm
+/audio/
+/_pycache_/
