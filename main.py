@@ -103,14 +103,9 @@ async def upload_audio(websocket: WebSocket):
                     german.append(german_translation)
                     
                     # 發送翻譯結果
-                    segment_data = {
-                        "segment_id": int(segment_file.split("_")[1].split(".")[0]),
-                        "translation": chinese_translation,
-                        "source_language": source_language,
-                        "original_text": segment_text
-                    }
+                    main_transcript.append(chinese_translation)
                     
-                    main_transcript.append(segment_data)
+                    
                     await websocket.send_json(main_transcript)
             
             # 發送完成訊息
@@ -215,16 +210,43 @@ async def websocket_endpoint(websocket: WebSocket):
                             end_time = time.time()
                             runtime = end_time - start_time
                             print(f"Transcript: {all_transcript}, Runtime = {runtime}")
+                            source_language = translator_meeting._language_detector.detect_language_text(transcript)
                             
                             if save_transcript == True:
-                                all_transcript.append(transcript)
+                                chinese_translation = translator_meeting.translate_by_text(
+                                    transcript,
+                                    source_language=source_language,
+                                    target_language=LANGUAGES.TAIWANESE.value
+                                )
+                                english_translation = translator_meeting.translate_by_text(
+                                    transcript,
+                                    source_language=source_language,
+                                    target_language=LANGUAGES.ENGLISH.value
+                                )
+                                japanese_translation = translator_meeting.translate_by_text(
+                                    transcript,
+                                    source_language=source_language,
+                                    target_language=LANGUAGES.JAPANESE.value
+                                )
+                                german_translation = translator_meeting.translate_by_text(
+                                    transcript,
+                                    source_language=source_language,
+                                    target_language=LANGUAGES.GERMAN.value
+                                )
+                                
+                                all_transcript.append(chinese_translation)
                                 response_data = {
                                     "transcript": all_transcript,
                                     "runtime": runtime
                                 }
                             else:
+                                chinese_translation = translator_meeting.translate_by_text(
+                                    transcript,
+                                    source_language=source_language,
+                                    target_language=LANGUAGES.TAIWANESE.value
+                                )
                                 response_data = {
-                                    "transcript": all_transcript + [transcript],
+                                    "transcript": all_transcript + [chinese_translation],
                                     "runtime": runtime
                                 }
                                 
