@@ -1,0 +1,19 @@
+fastapi
+python-multipart
+uvicorn
+openai
+openpyxl
+pydub
+langdetect
+SpeechRecognition
+webrtcvad
+websockets
+deepl
+requests
+noisereduce
+soundfile
+torch
+torchaudio
+demucs
+pyahocorasick
+# Visual Studio C++ 14.0

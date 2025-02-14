@@ -7,6 +7,7 @@ from openai import OpenAI
 from openpyxl import load_workbook
 from pydub import AudioSegment
 from langdetect import detect_langs, DetectorFactory, detect
+from Key import OpenAI_API_KEY
 
 app = FastAPI()
 
@@ -63,48 +64,6 @@ class lang_detector(object):
             result = 'en'
         return result
 
-
-# class transcript_fixer(object):
-
-#     lang_sheet_name = {'tw':'cmn-Hant-TW', 'en':'en-US', 'ja':'ja-JP', 'de':'de-DE'}
-#     lang_prompt = {'en': 'Correct mistakes according to the given keywords, without expanding on them. Keywords: ',
-#                    'tw': '根據給定的關鍵字糾正錯誤，而不擴展它們。關鍵字： ',
-#                    'ja': '与えられたキーワードに従って、間違いを拡張せずに修正します。キーワード: ',
-#                    'de': 'Korrigieren Sie Fehler anhand der angegebenen Stichwörter, ohne diese näher zu erläutern. Stichwörter: '}
-#     def __init__(self, client, language):
-#         self.client = client
-#         keywords = self._make_vocab_dict(language)
-#         self.sys_prompt = self._init_fix_prompt(language, keywords)
-#         self.language = language
-
-#     def request_fixing(self, text):
-#         user_query = transcript_fixer.lang_prompt[self.language] + text
-#         sys_prompt = self.sys_prompt
-#         messages = []
-#         messages.append({"role":"system","content":sys_prompt})
-#         messages.append({"role":"user","content":user_query})
-#         completion = self.client.chat.completions.create(model="gpt-4o",messages=messages,max_tokens=1000)
-#         fixed_text = completion.choices[0].message.content
-#         # print(fixed_text)
-#         return fixed_text
-
-#     def _make_vocab_dict(self, language) -> str:
-#         excel_file_path = "Knowledge Dataset.xlsx"
-#         workbook = load_workbook(excel_file_path)
-#         sheet_name = transcript_fixer.lang_sheet_name[language]
-#         sheet = workbook[sheet_name]
-#         keywords = dict()
-#         for row in range(2,32):
-#             keywords[sheet[f"B{row}"].value] = sheet[f"C{row}"].value
-#         return self._stringify_dict(keywords)
-    
-#     def _stringify_dict(self, keywords_val: dict) -> str:
-#         keywords_val_string = ", ".join([f"{key}: {value}" for key, value in keywords_val.items()])
-#         return keywords_val_string
-    
-#     def _init_fix_prompt(self, language, keywords):
-#         return transcript_fixer.lang_prompt[language] + "'" + keywords + "'"
-
 # Keywords
 def get_keywords(excel_file_path = "Knowledge Dataset.xlsx"):
     workbook = load_workbook(excel_file_path)
@@ -127,7 +86,7 @@ def merge_audio_files(input_path, output_path):
         audio = audio.set_frame_rate(16000)
         audio = audio.set_sample_width(2)
         audio.export(output_path, format="wav")
-
+    
 @app.post("/api/upload")
 async def upload_audio(file: UploadFile = File(...)):
     voice_input_path = "voice_input." + file.filename.split(".")[-1]
@@ -148,8 +107,7 @@ async def upload_audio(file: UploadFile = File(...)):
     
     time_start = time.time()
     
-    API_KEY = ''
-    client = OpenAI(api_key=API_KEY)
+    client = OpenAI(api_key=OpenAI_API_KEY)
     stt_model = STT(client, keywords=get_keywords())
     my_language_detector = lang_detector()
        
