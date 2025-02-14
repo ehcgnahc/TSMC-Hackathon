@@ -66,7 +66,7 @@ async def upload_audio(websocket: WebSocket):
             merge_audio_files(voice_input_path, voice_path_wav)
             segments = process_audio_file(voice_path_wav, output_dir_path)
             
-            all_transcript = []
+            main_transcript = []
             
             # 處理每個片段
             for segment_file in sorted(os.listdir(output_dir_path), key=lambda x: int(x.split("_")[1].split(".")[0])):
@@ -110,14 +110,19 @@ async def upload_audio(websocket: WebSocket):
                         "original_text": segment_text
                     }
                     
-                    all_transcript.append(segment_data)
-                    await websocket.send_json(all_transcript)
+                    main_transcript.append(segment_data)
+                    await websocket.send_json(main_transcript)
             
             # 發送完成訊息
             time_end = time.time()
             runtime = time_end-time_start
             await websocket.send_json({
                 "event": "complete",
+                "original": original,
+                "chinese": chinese,
+                "english": english,
+                "japan": japan,
+                "german": german,
                 "runtime": runtime
             })
             
