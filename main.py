@@ -84,44 +84,46 @@ async def upload_audio(websocket: WebSocket):
                         source_language=source_language,
                         target_language=LANGUAGES.TAIWANESE.value
                     )
-                    english_translation = translator_meeting.translate_by_text(
-                        segment_text,
-                        source_language=source_language,
-                        target_language=LANGUAGES.ENGLISH.value
-                    )
-                    japanese_translation = translator_meeting.translate_by_text(
-                        segment_text,
-                        source_language=source_language,
-                        target_language=LANGUAGES.JAPANESE.value
-                    )
-                    german_translation = translator_meeting.translate_by_text(
-                        segment_text,
-                        source_language=source_language,
-                        target_language=LANGUAGES.GERMAN.value
-                    )
                     
                     original.append(segment_text)
                     chinese.append(chinese_translation)
-                    english.append(english_translation)
-                    japan.append(japanese_translation)
-                    german.append(german_translation)
-                    
                     # 發送翻譯結果
                     main_transcript.append(chinese_translation)
                     
-                    
                     await websocket.send_json(main_transcript)
+
+            for i, text in enumerate(original):
+                english_translation = translator_meeting.translate_by_text(
+                    text,
+                    source_language=source_language,
+                    target_language=LANGUAGES.ENGLISH.value
+                )
+                japanese_translation = translator_meeting.translate_by_text(
+                    text,
+                    source_language=source_language,
+                    target_language=LANGUAGES.JAPANESE.value
+                )
+                german_translation = translator_meeting.translate_by_text(
+                    text,
+                    source_language=source_language,
+                    target_language=LANGUAGES.GERMAN.value
+                )
             
-            # 發送完成訊息
+                english.append(english_translation)
+                japan.append(japanese_translation)
+                german.append(german_translation)
+
+            # 只在最後發送一次完整的翻譯結果
             time_end = time.time()
             runtime = time_end-time_start
             await websocket.send_json({
-                "event": "complete",
-                "original": original,
-                "chinese": chinese,
-                "english": english,
-                "japan": japan,
-                "german": german,
+                "translations": {
+                    "original": original,
+                    "chinese": chinese,
+                    "english": english,
+                    "japan": japan,
+                    "german": german
+                },
                 "runtime": runtime
             })
             
