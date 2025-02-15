@@ -1,0 +1,1 @@
+首先,在 GKE Parts 裡的程式會處理文檔,並透過 Embedding Model 轉換成向量存在 Cloud SQL 裡。 使用者可以透過我們部署在 Cloud Run 的系統來查找 Cloud SQL 裡的資料。 放心,所有服務都有透過 Key 加密來確保資料安全。

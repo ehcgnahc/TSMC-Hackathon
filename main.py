@@ -10,6 +10,7 @@ from Stt import STT, meeting_translator, LANGUAGES
 from process_audio import process_audio_file, AudioStream2
 from function import get_keywords, merge_audio_files, get_audio_info, reduce_noise, isolate_voice, save_as_wav, save_to_wav
 from Key import OpenAI_API_KEY, DEEPL_API_KEY
+from Stt import get_keywords_from_dict, get_keywords_dictionary, pattern_finder
 
 openai_client = OpenAI(api_key=OpenAI_API_KEY)
 deepl_client = deepl.Translator(DEEPL_API_KEY)
@@ -25,6 +26,29 @@ app.add_middleware(
     allow_methods=["*"],  # 允許所有 HTTP 方法（GET、POST、PUT 等）
     allow_headers=["*"],  # 允許所有自訂標頭
 )
+
+def save_chinese_translation(text, filename="chinese_translation.txt"):
+    try:
+        # 使用 'a' 模式來追加內容而不是覆蓋
+        with open(filename, 'a', encoding='utf-8') as file:
+            file.write(text + '\n')  # 每次寫入後換行
+        # print(f"翻譯已成功追加到 {filename}")
+    except Exception as e:
+        print(f"儲存文件時發生錯誤：{str(e)}")
+
+def save_keywords(keywords, filename="keywords.txt"):
+    try:
+        # 使用 'a' 模式來追加內容而不是覆蓋
+        with open(filename, 'a', encoding='utf-8') as file:
+            for keyword in keywords:
+                file.write(keyword + '\n')  # 每個關鍵字寫入後換行
+        print(f"關鍵字已成功追加到 {filename}")
+    except Exception as e:
+        print(f"儲存關鍵字時發生錯誤：{str(e)}")
+
+# 使用示例
+# chinese_text = "這是一個測試文本。這裡可以放入你的中文翻譯。"
+# save_chinese_translation(chinese_text)
 
 @app.websocket("/ws/upload")
 async def upload_audio(websocket: WebSocket):
@@ -51,6 +75,15 @@ async def upload_audio(websocket: WebSocket):
         # 初始化 STT 模型
         stt_model = STT(openai_client, keywords=get_keywords())
         
+        # 獲取關鍵字字典
+        keyword_dict, _ = get_keywords_dictionary()
+
+        # 初始化 pattern_finder
+        keyword_finder = pattern_finder(keyword_dict)
+        
+        # 初始化一個集合來存儲所有檢測到的關鍵字
+        all_detected_keywords = set()
+        
         try:
             # 接收音頻文件
             content = await websocket.receive_bytes()
@@ -70,6 +103,9 @@ async def upload_audio(websocket: WebSocket):
             
             main_transcript = []
             
+            if os.path.exists("chinese_translation.txt"):
+                os.remove("chinese_translation.txt")
+            
             # 處理每個片段
             for segment_file in sorted(os.listdir(output_dir_path), key=lambda x: int(x.split("_")[1].split(".")[0])):
                 segment_path = os.path.join(output_dir_path, segment_file)
@@ -84,12 +120,20 @@ async def upload_audio(websocket: WebSocket):
                         source_language=source_language,
                         target_language=LANGUAGES.TAIWANESE.value
                     )
+                    translator_meeting.__make_keyword_output__(translator_meeting._keyword_finder.find_pattern(segment_text, source_language), translator_meeting._num_dict, source_language)
                     
                     original.append(segment_text)
                     chinese.append(chinese_translation)
+                    
+                    # 檢測關鍵字
+                    detected_keywords = keyword_finder.find_pattern(segment_text, source_language)
+                    
+                    # 將檢測到的關鍵字添加到集合中
+                    all_detected_keywords.update(detected_keywords)
+                    
                     # 發送翻譯結果
                     main_transcript.append(chinese_translation)
-                    
+                    save_chinese_translation(chinese_translation)
                     await websocket.send_json(main_transcript)
 
             for i, text in enumerate(original):
@@ -113,12 +157,22 @@ async def upload_audio(websocket: WebSocket):
                 japan.append(japanese_translation)
                 german.append(german_translation)
 
+            # 保存所有檢測到的關鍵字
+            save_keywords(all_detected_keywords)
+
+            # 發送關鍵字結果
+            await websocket.send_json({
+                "event": "keywords",
+                "keywords": list(all_detected_keywords)
+            })
+            
             # 只在最後發送一次完整的翻譯結果
             time_end = time.time()
             runtime = time_end-time_start
             await websocket.send_json({
+                "event": "complete",
                 "translations": {
-                    "original": original,
+                    # "original": original,
                     "chinese": chinese,
                     "english": english,
                     "japan": japan,
@@ -218,42 +272,43 @@ async def websocket_endpoint(websocket: WebSocket):
                             print(f"Transcript: {all_transcript}, Runtime = {runtime}")
                             source_language = translator_meeting._language_detector.detect_language_text(transcript)
                             
-                            if save_transcript == True:
-                                chinese_translation = translator_meeting.translate_by_text(
-                                    transcript,
-                                    source_language=source_language,
-                                    target_language=LANGUAGES.TAIWANESE.value
-                                )
-                                english_translation = translator_meeting.translate_by_text(
-                                    transcript,
-                                    source_language=source_language,
-                                    target_language=LANGUAGES.ENGLISH.value
-                                )
-                                japanese_translation = translator_meeting.translate_by_text(
-                                    transcript,
-                                    source_language=source_language,
-                                    target_language=LANGUAGES.JAPANESE.value
-                                )
-                                german_translation = translator_meeting.translate_by_text(
-                                    transcript,
-                                    source_language=source_language,
-                                    target_language=LANGUAGES.GERMAN.value
-                                )
+                            chinese_translation = translator_meeting.translate_by_text(
+                                transcript,
+                                source_language=source_language,
+                                target_language=LANGUAGES.TAIWANESE.value
+                            )
+                                # english_translation = translator_meeting.translate_by_text(
+                                #     transcript,
+                                #     source_language=source_language,
+                                #     target_language=LANGUAGES.ENGLISH.value
+                                # )
+                                # japanese_translation = translator_meeting.translate_by_text(
+                                #     transcript,
+                                #     source_language=source_language,
+                                #     target_language=LANGUAGES.JAPANESE.value
+                                # )
+                                # german_translation = translator_meeting.translate_by_text(
+                                #     transcript,
+                                #     source_language=source_language,
+                                #     target_language=LANGUAGES.GERMAN.value
+                                # )
                                 
+                            if save_transcript == True:
                                 all_transcript.append(chinese_translation)
                                 response_data = {
-                                    "transcript": all_transcript,
-                                    "runtime": runtime
+                                    "type": "SET_TRANSLATIONS",
+                                    "value": {
+                                        "transcript": all_transcript,
+                                        "runtime": runtime
+                                    }
                                 }
                             else:
-                                chinese_translation = translator_meeting.translate_by_text(
-                                    transcript,
-                                    source_language=source_language,
-                                    target_language=LANGUAGES.TAIWANESE.value
-                                )
                                 response_data = {
-                                    "transcript": all_transcript + [chinese_translation],
-                                    "runtime": runtime
+                                    "type": "SET_TRANSLATIONS",
+                                    "value": {
+                                        "transcript": all_transcript + [chinese_translation],
+                                        "runtime": runtime
+                                    }
                                 }
                                 
                             await websocket.send_text(json.dumps(response_data))

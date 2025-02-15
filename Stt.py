@@ -48,13 +48,13 @@ class STT(object):
         if keywords:
             prompt = "Recognize the following keywords accurately and emphasize them strongly: " + ", ".join(keywords) + ". "
             
-        prompt += "If any Simplified Chinese is detected, please respond using Traditional Chinese. "\
-            +"Whisper, Ok. "\
-            +"A pertinent sentence for your purpose in your language. "\
-            +"Ok, Whisper. Whisper, Ok. Ok, Whisper. Whisper, Ok. "\
-            +"Please find here, an unlikely ordinary sentence. "\
-            +"This is to avoid a repetition to be deleted. "\
-            +"Ok, Whisper. "
+        # prompt += "If any Simplified Chinese is detected, please respond using Traditional Chinese. "\
+        #     +"Whisper, Ok. "\
+        #     +"A pertinent sentence for your purpose in your language. "\
+        #     +"Ok, Whisper. Whisper, Ok. Ok, Whisper. Whisper, Ok. "\
+        #     +"Please find here, an unlikely ordinary sentence. "\
+        #     +"This is to avoid a repetition to be deleted. "\
+        #     +"Ok, Whisper. "
         return prompt
     
     def accumulate_chunks(self, chunks):
@@ -195,6 +195,13 @@ class pattern_finder(object):
             language_automaton.make_automaton()
             self._automaton[language] = language_automaton
 
+    def __make_keyword_output__(self, key_nums:List[int], num_dict:Dict[str, Dict[int, Tuple[str:str]]], language=LANGUAGES.TAIWANESE.value):
+        output_path = "KEYWORDS_2.txt"
+        with open(output_path, "a", encoding="utf-8") as file:
+            for key_num in key_nums:
+                keyword = num_dict[language][key_num][0]
+                file.write(keyword + "\n")
+    
     # returns List[int]: list of keyword's number
     def find_pattern(self, text:str, language:str) -> List[int]:
         matches = []
@@ -360,6 +367,8 @@ class meeting_translator(object):
         # no need to check source-target language, since this also adds explained text
         if keyword_nums == None:
             keyword_nums = self._keyword_finder.find_pattern(text, source_language)
+            print("Debug: ",text,keyword_nums)
+            # self._keyword_finder.__make_keyword_output__(keyword_nums, self._num_dict
         translated_text = self._text_language_changer.translate_text(text, source_language, target_language)
         return translated_text
         # explained_text = self._keyword_explainer.explain_text(translated_text, target_language, keyword_nums)
@@ -376,7 +385,13 @@ class meeting_translator(object):
     
     def _get_last_transcribed(self) -> str:
         return self._transcribed_text
-
+    
+    def __make_keyword_output__(self, key_nums:List[int], num_dict:Dict[str, Dict[int, Tuple[str:str]]], language='tw'):
+        output_path = "KEYWORDS_2.txt"
+        with open(output_path, "a", encoding="utf-8") as file:
+            for key_num in key_nums:
+                keyword = num_dict[language][key_num][0]
+                file.write(keyword + "\n")
 
 def main():
     openai_client = OpenAI(api_key=OpenAI_API_KEY)
@@ -391,7 +406,7 @@ def main():
         shutil.rmtree(folder_name)
     os.makedirs(folder_name)
     
-    for i in range(1,19):
+    for i in range(1,20):
         # part_time_start = time.time()
         audio_file_path = f"upload_output_segments/segment_{i}.wav"
         

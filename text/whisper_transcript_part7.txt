@@ -1,1 +1,1 @@
-好的,這件事技術上沒問題,但我需要回去和我老闆討論一下,因為這屬於架構上的Change,我這邊需要新增Cloud Function來抓Log的資料, BigQuery那邊也需要新增Table欄位才行。
+可以除了以sensor偵測外,也可以加入GNI的能力來判斷何時該run下一批貨。

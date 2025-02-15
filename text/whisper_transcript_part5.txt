@@ -1,1 +1,1 @@
-Why was EC altered? Shouldn't the values align with the master copy? Can IT check the system log to identify who made the change? 可以,我回去撈一下資料。
+Der Hauptgrund ist, dass, wenn sich noch Warn am Port befinden, der Arm zuerst Warn zum Ran wirft, was häufig zu Staus führt.
