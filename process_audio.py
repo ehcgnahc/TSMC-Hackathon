@@ -34,11 +34,11 @@ def process_audio_file(input_path, output_dir_path):
             
             # 若空白音檔持續至少約500ms，則紀錄起來
             if not vad.is_speech(frame_bytes, sample_rate):
-                print("not speaking")
+                # print("not speaking")
                 inactive_count += 1
                 active_count = 0
             else:
-                print("speaking")
+                # print("speaking")
                 inactive_count = 0
                 if not start and active_count < 25:
                     active_count += 1
@@ -100,11 +100,11 @@ class AudioStream:
             current_frame = self.buffer[start_byte:start_byte + frame_size]
             
             if not vad.is_speech(current_frame, sample_rate):
-                print("not speaking")
+                # print("not speaking")
                 self.inactive_count += 1
                 self.active_count = 0
             else:
-                print("speaking")
+                # print("speaking")
                 self.inactive_count = 0
                 if not self.start and self.active_count < 25:
                     self.active_count += 1
@@ -112,7 +112,7 @@ class AudioStream:
                     self.start = True
             
             if self.inactive_count == 25 and self.start:
-                print("sentence end")
+                # print("sentence end")
                 
                 segment_data = self.buffer[self.last_cut:start_byte]
                 if segment_data:
@@ -172,11 +172,11 @@ class AudioStream2:
                 
                 # 若空白音檔持續至少約300ms，則紀錄起來
                 if not vad.is_speech(frame_bytes, sample_rate):
-                    print("not speaking")
+                    # print("not speaking")
                     inactive_count += 1
                     active_count = 0
                 else:
-                    print("speaking")
+                    # print("speaking")
                     inactive_count = 0
                     if not start and active_count < 25:
                         active_count += 1

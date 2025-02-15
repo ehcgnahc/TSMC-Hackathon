@@ -2,10 +2,10 @@ import os
 import time
 import shutil
 import json
+import deepl
+from openai import OpenAI
 from fastapi import FastAPI, UploadFile, File, HTTPException, WebSocket, WebSocketDisconnect 
 from fastapi.middleware.cors import CORSMiddleware
-from openai import OpenAI
-import deepl
 from Stt import STT, meeting_translator, LANGUAGES
 from process_audio import process_audio_file, AudioStream2
 from function import get_keywords, merge_audio_files, get_audio_info, reduce_noise, isolate_voice, save_as_wav, save_to_wav
@@ -66,6 +66,8 @@ async def upload_audio(websocket: WebSocket):
             merge_audio_files(voice_input_path, voice_path_wav)
             segments = process_audio_file(voice_path_wav, output_dir_path)
             
+            print(segments)
+            
             main_transcript = []
             
             # 處理每個片段
@@ -74,6 +76,8 @@ async def upload_audio(websocket: WebSocket):
                 
                 with open(segment_path, "rb") as f:
                     segment_text = stt_model.transcript(f)
+                    print(segment_text)
+                    
                     source_language = translator_meeting._language_detector.detect_language_text(segment_text)
                     chinese_translation = translator_meeting.translate_by_text(
                         segment_text,
